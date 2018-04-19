@@ -17,7 +17,7 @@ nverticesModule = cms.EDProducer("VertexMultiplicityCounter",
 njets30Module = cms.EDProducer("CandCleanedMultiplicityCounter", 
     pairs   = cms.InputTag("tpPairs"),
     objects = cms.InputTag("ak4PFJetsCHS"),
-    objectSelection = cms.string("abs(eta) < 5 && pt > 30"), 
+    objectSelection = cms.string("pt>30 && ( (abs(eta)<=2.4 && neutralHadronEnergyFraction<0.99 && neutralEmEnergyFraction<0.99 && (chargedMultiplicity+neutralMultiplicity)>1 && chargedHadronEnergyFraction>0.0 && chargedMultiplicity>0.0 && chargedEmEnergyFraction<0.99) || (abs(eta)>2.4 && abs(eta)<=2.7 && neutralHadronEnergyFraction<0.99 && neutralEmEnergyFraction<0.99 && (chargedMultiplicity+neutralMultiplicity)>1) || (abs(eta)>2.7 && abs(eta)<=3.0 && neutralHadronEnergyFraction<0.98 && neutralEmEnergyFraction>0.01 && neutralMultiplicity>2) || (abs(eta)>3.0 && abs(eta)<=5.0 && neutralEmEnergyFraction<0.90 && neutralMultiplicity>10) )"),
     minTagObjDR   = cms.double(0.3),
     minProbeObjDR = cms.double(0.3),
 )
