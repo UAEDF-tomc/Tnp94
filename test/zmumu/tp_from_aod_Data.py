@@ -12,7 +12,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 10
 process.source = cms.Source("PoolSource", 
     fileNames = cms.untracked.vstring(),
 )
-#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
 
 process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
@@ -231,6 +231,7 @@ process.tpTree = cms.EDAnalyzer("TagProbeFitTreeProducer",
         JetPtRel= cms.InputTag("AddLeptonJetRelatedVariables","JetPtRel"),
         JetNDauCharged= cms.InputTag("AddLeptonJetRelatedVariables","JetNDauCharged"),
         JetBTagCSV= cms.InputTag("AddLeptonJetRelatedVariables","JetBTagCSV"),
+        JetDeepBTagCSV= cms.InputTag("AddLeptonJetRelatedVariables","JetDeepBTagCSV"),
         miniIsoCharged = cms.InputTag("muonMiniIsoCharged","miniIso"),
         activity_miniIsoCharged = cms.InputTag("muonMiniIsoCharged","activity"),
         miniIsoPUCharged = cms.InputTag("muonMiniIsoPUCharged","miniIso"),
@@ -406,7 +407,7 @@ process.load("MuonAnalysis.TagAndProbe.tracking_reco_info_cff")
 
 process.tpTreeSta = process.tpTree.clone(
     tagProbePairs = "tpPairsSta",
-    arbitration   = "OneProbe",
+    arbitration = "None",
     variables = cms.PSet(
         KinematicVariables, 
         StaOnlyVariables,

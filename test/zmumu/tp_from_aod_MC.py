@@ -12,7 +12,7 @@ process.source = cms.Source("PoolSource",
 )
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1))
 #process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10))
-#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100))
 
 process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.StandardSequences.MagneticField_38T_cff')
@@ -37,7 +37,8 @@ elif "CMSSW_9_2_" in os.environ['CMSSW_VERSION']:
 elif "CMSSW_9_4_" in os.environ['CMSSW_VERSION']:
     process.GlobalTag.globaltag = cms.string('91X_mcRun2_asymptotic_v3')
     process.source.fileNames = [
-        '/store/mc/RunIIFall17DRPremix/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/AODSIM/RECOSIMstep_94X_mc2017_realistic_v10-v1/00000/0019074F-6EF2-E711-B6CD-008CFAC94118.root'
+        '/store/mc/RunIIFall17DRPremix/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/AODSIM/RECOSIMstep_94X_mc2017_realistic_v10-v1/00000/0019074F-6EF2-E711-B6CD-008CFAC94118.root',
+#        '/store/mc/RunIIFall17DRPremix/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/AODSIM/RECOSIMstep_94X_mc2017_realistic_v10_ext1-v1/00000/4E4FD45A-06F3-E711-A106-34E6D7E05F0E.root',
         #'/store/relval/CMSSW_9_4_0/RelValZMM_13/GEN-SIM-RECO/PU25ns_94X_mc2017_realistic_v10-v1/10000/2EA4F2FE-7DCA-E711-8BF9-0CC47A7C3638.root'
         #'/store/relval/CMSSW_9_4_0_pre3/RelValZMM_13/MINIAODSIM/PU25ns_94X_mc2017_realistic_PixFailScenario_IDEAL_HS_AVE50-v1/10000/5228FC24-10C5-E711-9B90-E0071B73B6C0.root'
     ] 
@@ -160,6 +161,7 @@ process.tpTree = cms.EDAnalyzer("TagProbeFitTreeProducer",
         JetPtRel= cms.InputTag("AddLeptonJetRelatedVariables","JetPtRel"),
         JetNDauCharged= cms.InputTag("AddLeptonJetRelatedVariables","JetNDauCharged"),
         JetBTagCSV= cms.InputTag("AddLeptonJetRelatedVariables","JetBTagCSV"),
+        JetDeepBTagCSV= cms.InputTag("AddLeptonJetRelatedVariables","JetDeepBTagCSV"),
         miniIsoCharged = cms.InputTag("muonMiniIsoCharged","miniIso"), 
         activity_miniIsoCharged = cms.InputTag("muonMiniIsoCharged","activity"), 
         miniIsoPUCharged = cms.InputTag("muonMiniIsoPUCharged","miniIso"), 
