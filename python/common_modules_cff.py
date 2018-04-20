@@ -180,11 +180,7 @@ AddLeptonJetRelatedVariables = cms.EDProducer("AddLeptonJetRelatedVariables",
     RawJetCollection= cms.InputTag("ak4PFJetsCHS"),
     L1Corrector = cms.InputTag("ak4PFCHSL1FastjetCorrector"),
     L1L2L3ResCorrector= cms.InputTag("ak4PFCHSL1FastL2L3Corrector"),
-    pfCandidates = cms.InputTag("pfNoPileUpPFBRECO"),
-#    pfCandidates = cms.InputTag("pfAllChargedParticlesPFBRECO"),
     LeptonCollection = cms.InputTag("probeMuons"),
-    dRmax = cms.double(0.4),
-    subLepFromJetForPtRel = cms.bool(True)
 )
 
 probeMultiplicity = cms.EDProducer("ProbeMulteplicityProducer",

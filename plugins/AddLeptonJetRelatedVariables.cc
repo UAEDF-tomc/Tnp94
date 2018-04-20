@@ -64,11 +64,7 @@ private:
   edm::EDGetTokenT<reco::JetTagCollection> bTagCollectionTag_;
   edm::EDGetTokenT<reco::JetTagCollection> bTagCollectionTag2_;
   edm::EDGetTokenT<reco::JetTagCollection> bTagCollectionTag3_;
-  edm::EDGetTokenT<PFCollection> pfCandidates_;
 
-
-  const double dRmax_;
-  const bool subLepFromJetForPtRel_;
 
   template<typename Hand, typename T>
   void storeMap(edm::Event &iEvent, const Hand & handle, const std::vector<T> & values, const std::string    & label) const ; 
@@ -86,10 +82,7 @@ private:
 //
 // constructors and destructor
 //
-AddLeptonJetRelatedVariables::AddLeptonJetRelatedVariables(const edm::ParameterSet& iConfig):
-  dRmax_(iConfig.getParameter<double>("dRmax")),
-  subLepFromJetForPtRel_(iConfig.getParameter<bool>("subLepFromJetForPtRel"))
-{
+AddLeptonJetRelatedVariables::AddLeptonJetRelatedVariables(const edm::ParameterSet& iConfig){
   edm::InputTag jetcollection = iConfig.getParameter<edm::InputTag>("RawJetCollection");
   jetCollectionTag_ = consumes<reco::PFJetCollection>(jetcollection);
 
@@ -102,9 +95,6 @@ AddLeptonJetRelatedVariables::AddLeptonJetRelatedVariables(const edm::ParameterS
   edm::InputTag l1l2l3ResCortag = iConfig.getParameter<edm::InputTag>("L1L2L3ResCorrector");
   tagL1L2L3ResCorrector_ = consumes<reco::JetCorrector>(l1l2l3ResCortag);
 
-  edm::InputTag pfcandidatecoll = iConfig.getParameter<edm::InputTag>("pfCandidates");
-  pfCandidates_ = consumes<PFCollection>(pfcandidatecoll);
-  
   bTagCollectionTag_  = consumes<reco::JetTagCollection>(edm::InputTag("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
   bTagCollectionTag2_ = consumes<reco::JetTagCollection>(edm::InputTag("pfDeepCSVJetTags:probb"));
   bTagCollectionTag3_ = consumes<reco::JetTagCollection>(edm::InputTag("pfDeepCSVJetTags:probbb"));
@@ -157,9 +147,6 @@ AddLeptonJetRelatedVariables::produce(edm::Event& iEvent, const edm::EventSetup&
   edm::Handle<reco::JetTagCollection> bTagHandle;  iEvent.getByToken(bTagCollectionTag_,  bTagHandle);  const reco::JetTagCollection & bTags  = *(bTagHandle.product());
   edm::Handle<reco::JetTagCollection> bTagHandle2; iEvent.getByToken(bTagCollectionTag2_, bTagHandle2); const reco::JetTagCollection & bTags2 = *(bTagHandle2.product());
   edm::Handle<reco::JetTagCollection> bTagHandle3; iEvent.getByToken(bTagCollectionTag3_, bTagHandle3); const reco::JetTagCollection & bTags3 = *(bTagHandle3.product());
-
-  edm::Handle<PFCollection> pfCandidates;
-  iEvent.getByToken(pfCandidates_, pfCandidates);
 
   edm::Handle<reco::VertexCollection> PVs;
   iEvent.getByToken(vertexes_, PVs);
@@ -250,7 +237,7 @@ AddLeptonJetRelatedVariables::produce(edm::Event& iEvent, const edm::EventSetup&
       ptratio.push_back(l.Pt()/lepAwareJet.Pt());
       ptrel.push_back(lV.Perp((jV - lV).Vect()));
 
-      if(icand->pt() > 10){
+      if(true and icand->pt() > 10){ // For debugging
         std::cout << "  **** Muon (pt/eta,phi): " << icand->pt() << ", " << icand->eta() << "\t" << icand->phi() << std::endl;
         std::cout << "        jet (pt/eta,phi): " << lepAwareJet.pt() << ", " << jet.eta() << "\t" << jet.phi() << std::endl;
         std::cout << "                 deepcsv: " << bjet2+bjet3 << "(" << bjet2 << "+" << bjet3 << ")" << std::endl;
