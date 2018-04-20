@@ -19,6 +19,7 @@ process.load('Configuration.StandardSequences.MagneticField_38T_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
 process.load("Configuration.StandardSequences.Reconstruction_cff")
 
+is2016=False
 import os
 if "CMSSW_8_0_" in os.environ['CMSSW_VERSION']:
     process.GlobalTag.globaltag = cms.string('80X_mcRun2_asymptotic_v14')
@@ -33,17 +34,22 @@ elif "CMSSW_9_2_" in os.environ['CMSSW_VERSION']:
     process.GlobalTag.globaltag = cms.string('91X_mcRun2_asymptotic_v3')
     process.source.fileNames = [
         '/store/relval/CMSSW_9_2_0/RelValZMM_13/GEN-SIM-RECO/PU25ns_91X_mcRun2_asymptotic_v3-v1/10000/0471AF1A-F53C-E711-A012-0CC47A7C345E.root'
-    ] 
+    ]
+
 elif "CMSSW_9_4_" in os.environ['CMSSW_VERSION']:
-    process.GlobalTag.globaltag = cms.string('91X_mcRun2_asymptotic_v3')
+    process.GlobalTag.globaltag = cms.string('80X_mcRun2_asymptotic_v14' if is2016 else '91X_mcRun2_asymptotic_v3')
     process.source.fileNames = [
-        '/store/mc/RunIIFall17DRPremix/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/AODSIM/RECOSIMstep_94X_mc2017_realistic_v10-v1/00000/0019074F-6EF2-E711-B6CD-008CFAC94118.root',
+        '/store/mc/RunIISpring16reHLT80/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/AODSIM/PUSpring16RAWAODSIM_reHLT_80X_mcRun2_asymptotic_v14-v1/40001/3459A4AB-D85C-E611-81F5-02163E011488.root' if is2016 else 'file:pickeventsAOD.root'
+#        '/store/mc/RunIIFall17DRPremix/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/AODSIM/RECOSIMstep_94X_mc2017_realistic_v10-v1/00000/0019074F-6EF2-E711-B6CD-008CFAC94118.root',
 #        '/store/mc/RunIIFall17DRPremix/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/AODSIM/RECOSIMstep_94X_mc2017_realistic_v10_ext1-v1/00000/4E4FD45A-06F3-E711-A106-34E6D7E05F0E.root',
         #'/store/relval/CMSSW_9_4_0/RelValZMM_13/GEN-SIM-RECO/PU25ns_94X_mc2017_realistic_v10-v1/10000/2EA4F2FE-7DCA-E711-8BF9-0CC47A7C3638.root'
         #'/store/relval/CMSSW_9_4_0_pre3/RelValZMM_13/MINIAODSIM/PU25ns_94X_mc2017_realistic_PixFailScenario_IDEAL_HS_AVE50-v1/10000/5228FC24-10C5-E711-9B90-E0071B73B6C0.root'
     ] 
 
 else: raise RuntimeError, "Unknown CMSSW version %s" % os.environ['CMSSW_VERSION']
+
+
+
 
 ## SELECT WHAT DATASET YOU'RE RUNNING ON
 TRIGGER="SingleMu"
@@ -99,6 +105,38 @@ changeTriggerProcessName(process, "HLT")
 
 from MuonAnalysis.TagAndProbe.common_variables_cff import *
 process.load("MuonAnalysis.TagAndProbe.common_modules_cff")
+
+if is2016:
+  process.patTriggerFull.processName = cms.string("HLT2")
+
+  #
+  # For deepCSV 
+  # Has (at time of writing) no effect (Moriond2017 miniAOD contains latest JEC)
+  #
+  process.load('JetMETCorrections.Configuration.JetCorrectors_cff')
+  process.load('Configuration.StandardSequences.MagneticField_cff')  # needed for pfImpactParameterTagInfos
+#  if isData: jetCorrectorLevels = ['L1FastJet', 'L2Relative', 'L3Absolute','L2L3Residual']
+  jetCorrectorLevels = ['L1FastJet', 'L2Relative', 'L3Absolute']
+
+  from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
+
+  updateJetCollection(
+    process,
+    jetSource = cms.InputTag('ak4PFJetsCHS'),
+    labelName = 'DeepCSV',
+    jetCorrections = ('AK4PFchs', cms.vstring(jetCorrectorLevels), 'None'),
+    btagDiscriminators = [
+      'pfCombinedSecondaryVertexV2BJetTags',
+      'pfDeepCSVJetTags:probudsg',
+      'pfDeepCSVJetTags:probb',
+      'pfDeepCSVJetTags:probc',
+      'pfDeepCSVJetTags:probbb',
+    ]
+   )
+  process.jetSequence = cms.Sequence(process.patAlgosToolsTask)
+  process.AddLeptonJetRelatedVariables.RawJetCollection= cms.InputTag("selectedUpdatedPatJetsDeepCSV")
+else:
+  process.jetSequence = cms.Sequence()
 
 process.tagMuons = cms.EDFilter("PATMuonSelector",
     src = cms.InputTag("patMuonsWithTrigger"),
@@ -285,7 +323,8 @@ process.tnpSimpleSequence = cms.Sequence(
     process.tpTree
 )
 
-process.tagAndProbe = cms.Path( 
+process.tagAndProbe = cms.Path(
+    process.jetSequence *    # Why is does this sequence not run ??????????????
 #    process.fastFilter +
     process.mergedMuons                 *
     process.patMuonsWithTriggerSequence +
