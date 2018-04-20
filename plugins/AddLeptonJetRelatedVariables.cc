@@ -56,7 +56,7 @@ private:
 
   // ----------auxiliary functions -------------------  
   // ----------member data ---------------------------
-  edm::EDGetTokenT<reco::PFJetCollection> jetCollectionTag_;
+  edm::EDGetTokenT<edm::View<reco::Jet>> jetCollectionTag_;
   edm::EDGetTokenT<reco::CandidateView> leptonCollectionTag_;
   edm::EDGetTokenT<reco::JetCorrector> tagL1Corrector_;
   edm::EDGetTokenT<reco::JetCorrector> tagL1L2L3ResCorrector_;
@@ -84,7 +84,7 @@ private:
 //
 AddLeptonJetRelatedVariables::AddLeptonJetRelatedVariables(const edm::ParameterSet& iConfig){
   edm::InputTag jetcollection = iConfig.getParameter<edm::InputTag>("RawJetCollection");
-  jetCollectionTag_ = consumes<reco::PFJetCollection>(jetcollection);
+  jetCollectionTag_ = consumes<edm::View<reco::Jet>>(jetcollection);
 
   edm::InputTag leptoncollection = iConfig.getParameter<edm::InputTag>("LeptonCollection");
   leptonCollectionTag_ = consumes<reco::CandidateView>(leptoncollection);
@@ -132,7 +132,7 @@ AddLeptonJetRelatedVariables::produce(edm::Event& iEvent, const edm::EventSetup&
   using namespace edm;
 
   std::cout << std::endl << "Run: " << iEvent.id().run() << "\tLumi: " << iEvent.id().luminosityBlock() << "\tEvent: " << iEvent.id().event() << std::endl;
-  edm::Handle<reco::PFJetCollection> jets;       
+  edm::Handle<edm::View<reco::Jet>> jets;
   iEvent.getByToken (jetCollectionTag_, jets);    
 
   edm::Handle<reco::CandidateView> leptons;               
