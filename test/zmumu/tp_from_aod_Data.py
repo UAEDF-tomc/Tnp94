@@ -19,6 +19,8 @@ process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
 process.load("Configuration.StandardSequences.Reconstruction_cff")
 
+is2016=False
+
 import os
 if "CMSSW_7_4_" in os.environ['CMSSW_VERSION']:
 
@@ -82,7 +84,7 @@ elif "CMSSW_9_2_"in os.environ['CMSSW_VERSION']:
         '/store/express/Run2017B/ExpressPhysics/FEVT/Express-v1/000/297/101/00000/0C01D9CD-D253-E711-9D2F-02163E013511.root'
     ]  
 elif "CMSSW_9_4_" in os.environ['CMSSW_VERSION']:
-    process.GlobalTag.globaltag = cms.string('91X_mcRun2_asymptotic_v3')
+    process.GlobalTag.globaltag = cms.string('80X_dataRun2_2016SeptRepro_v7' if is2016 else '94X_dataRun2_v6')
 
     process.source.fileNames = [
             '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/0001B172-B9D8-E711-9771-34E6D7E05F1B.root',
@@ -222,24 +224,18 @@ process.tpTree = cms.EDAnalyzer("TagProbeFitTreeProducer",
         AllVariables,
         ExtraIsolationVariables,
         PuppiIsolationVariables,
-        isoTrk03Abs = cms.InputTag("probeMuonsIsoValueMaps","probeMuonsIsoFromDepsTk"),
-        isoTrk03Rel = cms.InputTag("probeMuonsIsoValueMaps","probeMuonsRelIsoFromDepsTk"),
-        dxyBS = cms.InputTag("muonDxyPVdzmin","dxyBS"),
-        dxyPVdzmin = cms.InputTag("muonDxyPVdzmin","dxyPVdzmin"),
-        dzPV = cms.InputTag("muonDxyPVdzmin","dzPV"),
-        JetPtRatio= cms.InputTag("AddLeptonJetRelatedVariables","JetPtRatio"),
-        JetPtRel= cms.InputTag("AddLeptonJetRelatedVariables","JetPtRel"),
-        JetNDauCharged= cms.InputTag("AddLeptonJetRelatedVariables","JetNDauCharged"),
-        JetBTagCSV= cms.InputTag("AddLeptonJetRelatedVariables","JetBTagCSV"),
-        JetDeepBTagCSV= cms.InputTag("AddLeptonJetRelatedVariables","JetDeepBTagCSV"),
-        miniIsoCharged = cms.InputTag("muonMiniIsoCharged","miniIso"),
-        activity_miniIsoCharged = cms.InputTag("muonMiniIsoCharged","activity"),
-        miniIsoPUCharged = cms.InputTag("muonMiniIsoPUCharged","miniIso"),
-        activity_miniIsoPUCharged = cms.InputTag("muonMiniIsoPUCharged","activity"),
-        miniIsoNeutrals = cms.InputTag("muonMiniIsoNeutrals","miniIso"),
-        activity_miniIsoNeutrals = cms.InputTag("muonMiniIsoNeutrals","activity"),
-        miniIsoPhotons = cms.InputTag("muonMiniIsoPhotons","miniIso"),
-        activity_miniIsoPhotons = cms.InputTag("muonMiniIsoPhotons","activity"),
+        logdxy         = cms.InputTag("AddLeptonJetRelatedVariables","LogDxy"),
+        logdz          = cms.InputTag("AddLeptonJetRelatedVariables","LogDz"),
+        sip3d          = cms.InputTag("AddLeptonJetRelatedVariables","Sip3d"),
+        JetPtRatio     = cms.InputTag("AddLeptonJetRelatedVariables","JetPtRatio"),
+        JetPtRel       = cms.InputTag("AddLeptonJetRelatedVariables","JetPtRel"),
+        JetNDauCharged = cms.InputTag("AddLeptonJetRelatedVariables","JetNDauCharged"),
+        JetBTagCSV     = cms.InputTag("AddLeptonJetRelatedVariables","JetBTagCSV"),
+        JetDeepBTagCSV = cms.InputTag("AddLeptonJetRelatedVariables","JetDeepBTagCSV"),
+        SegComp        = cms.InputTag("AddLeptonJetRelatedVariables","SegComp"),
+        miniIsoCharged = cms.InputTag("AddLeptonJetRelatedVariables","MiniIsoCharged"), 
+        miniIsoNeutral = cms.InputTag("AddLeptonJetRelatedVariables","MiniIsoNeutral"),
+        relIso         = cms.InputTag("myIso","PFIsoAll"),
         nSplitTk  = cms.InputTag("splitTrackTagger"),
         mt  = cms.InputTag("probeMetMt","mt"),
     ),
@@ -314,7 +310,8 @@ process.miniIsoSeq = cms.Sequence(
     process.muonMiniIsoCharged + 
     process.muonMiniIsoPUCharged + 
     process.muonMiniIsoNeutrals + 
-    process.muonMiniIsoPhotons 
+    process.muonMiniIsoPhotons + 
+    process.myIso
 )
 
 # process.load("JetMETCorrections.Configuration.JetCorrectionProducersAllAlgos_cff")
