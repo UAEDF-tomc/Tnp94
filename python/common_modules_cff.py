@@ -176,11 +176,22 @@ AddPtRatioPtRel = cms.EDProducer("AddPtRatioPtRel",
     subLepFromJetForPtRel = cms.bool(True)
 )
 
+myIso = cms.EDProducer("MuonIsoValueMapProducer",
+    src = cms.InputTag("probeMuons"),
+    relative = cms.bool(True),
+    rho = cms.InputTag("fixedGridRhoFastjetAll"),
+    pfCandidates = cms.InputTag("particleFlow"),
+    effectiveAreas = cms.FileInPath("MuonAnalysis/TagAndProbe/data/effAreas_cone03_Muons_Fall17.txt")
+)
+
 AddLeptonJetRelatedVariables = cms.EDProducer("AddLeptonJetRelatedVariables",
     RawJetCollection= cms.InputTag("ak4PFJetsCHS"),
     L1Corrector = cms.InputTag("ak4PFCHSL1FastjetCorrector"),
     L1L2L3ResCorrector= cms.InputTag("ak4PFCHSL1FastL2L3Corrector"),
     LeptonCollection = cms.InputTag("probeMuons"),
+    miniIsoCharged = cms.InputTag("myIso","miniIsoChg"), 
+    miniIsoAll     = cms.InputTag("myIso","miniIsoAll"),
+    relIso         = cms.InputTag("myIso","PFIsoAll"),
 )
 
 probeMultiplicity = cms.EDProducer("ProbeMulteplicityProducer",
