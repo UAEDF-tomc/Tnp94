@@ -146,8 +146,9 @@ template<typename T> double IsoValueMapProducer<T>::chargedSum(const T& muon, ed
 
   double iso_ch = 0;
   for(const reco::PFCandidate &pfc : *pfcands){
-    if(fabs(pfc.pdgId()) < 7)  continue;
-    if(pfc.charge()==0)        continue;
+    if(fabs(pfc.pdgId()) < 7)          continue;
+    if(pfc.charge()==0)                continue;
+    if(not pfc.trackRef().isNonnull()) continue;
 
 
     auto vtxLead  = PVs->begin();
