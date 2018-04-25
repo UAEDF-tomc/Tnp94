@@ -25,7 +25,6 @@
 #include <DataFormats/MuonReco/interface/Muon.h>
 #include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
 #include "DataFormats/ParticleFlowCandidate/interface/PFCandidateFwd.h"
-#include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/Common/interface/RefVector.h"
@@ -33,7 +32,7 @@
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 #include "DataFormats/Math/interface/deltaR.h"
-
+#include "DataFormats/PatCandidates/interface/Muon.h"
 using namespace std;
 
 
@@ -46,8 +45,6 @@ public:
   explicit AddLeptonJetRelatedVariables(const edm::ParameterSet&);
   ~AddLeptonJetRelatedVariables();
 
-  typedef std::vector< edm::FwdPtr<reco::PFCandidate> > PFCollection;
-  
 private:
   virtual void beginJob();
   virtual void produce(edm::Event&, const edm::EventSetup&);
@@ -57,7 +54,7 @@ private:
   // ----------auxiliary functions -------------------  
   // ----------member data ---------------------------
   edm::EDGetTokenT<edm::View<reco::Jet>> jetCollectionTag_;
-  edm::EDGetTokenT<reco::CandidateView> leptonCollectionTag_;
+  edm::EDGetTokenT<edm::View<pat::Muon>> leptonCollectionTag_;
   edm::EDGetTokenT<reco::JetCorrector> tagL1Corrector_;
   edm::EDGetTokenT<reco::JetCorrector> tagL1L2L3ResCorrector_;
   edm::EDGetTokenT<reco::VertexCollection> vertexes_;
@@ -65,6 +62,9 @@ private:
   edm::EDGetTokenT<reco::JetTagCollection> bTagCollectionTag2_;
   edm::EDGetTokenT<reco::JetTagCollection> bTagCollectionTag3_;
 
+  edm::EDGetTokenT<edm::ValueMap<float>> miniIsoChargedToken; 
+  edm::EDGetTokenT<edm::ValueMap<float>> miniIsoAllToken; 
+  edm::EDGetTokenT<edm::ValueMap<float>> relIsoToken; 
 
   template<typename Hand, typename T>
   void storeMap(edm::Event &iEvent, const Hand & handle, const std::vector<T> & values, const std::string    & label) const ; 
@@ -87,7 +87,7 @@ AddLeptonJetRelatedVariables::AddLeptonJetRelatedVariables(const edm::ParameterS
   jetCollectionTag_ = consumes<edm::View<reco::Jet>>(jetcollection);
 
   edm::InputTag leptoncollection = iConfig.getParameter<edm::InputTag>("LeptonCollection");
-  leptonCollectionTag_ = consumes<reco::CandidateView>(leptoncollection);
+  leptonCollectionTag_ = consumes<edm::View<pat::Muon>>(leptoncollection);
 
   edm::InputTag l1Cortag = iConfig.getParameter<edm::InputTag>("L1Corrector");
   tagL1Corrector_ = consumes<reco::JetCorrector>(l1Cortag);
@@ -101,12 +101,23 @@ AddLeptonJetRelatedVariables::AddLeptonJetRelatedVariables(const edm::ParameterS
   
   vertexes_ = consumes<reco::VertexCollection>(edm::InputTag("offlinePrimaryVertices"));
 
+  miniIsoChargedToken = consumes<edm::ValueMap<float>>(iConfig.getParameter<edm::InputTag>("miniIsoCharged"));
+  miniIsoAllToken     = consumes<edm::ValueMap<float>>(iConfig.getParameter<edm::InputTag>("miniIsoAll"));
+  relIsoToken         = consumes<edm::ValueMap<float>>(iConfig.getParameter<edm::InputTag>("relIso"));
+
   //now do what ever initialization is needed
   produces<edm::ValueMap<float> >("JetPtRatio");
   produces<edm::ValueMap<float> >("JetPtRel");
   produces<edm::ValueMap<float> >("JetNDauCharged");
   produces<edm::ValueMap<float> >("JetBTagCSV");
   produces<edm::ValueMap<float> >("JetDeepBTagCSV");
+  produces<edm::ValueMap<float> >("MiniIsoCharged");
+  produces<edm::ValueMap<float> >("MiniIsoNeutral");
+  produces<edm::ValueMap<float> >("RelIso");
+  produces<edm::ValueMap<float> >("LogDxy");
+  produces<edm::ValueMap<float> >("LogDz");
+  produces<edm::ValueMap<float> >("Sip3d");
+  produces<edm::ValueMap<float> >("SegComp");
 }
 
 AddLeptonJetRelatedVariables::~AddLeptonJetRelatedVariables()
@@ -131,11 +142,11 @@ AddLeptonJetRelatedVariables::produce(edm::Event& iEvent, const edm::EventSetup&
 {
   using namespace edm;
 
-  std::cout << std::endl << "Run: " << iEvent.id().run() << "\tLumi: " << iEvent.id().luminosityBlock() << "\tEvent: " << iEvent.id().event() << std::endl;
+ // std::cout << std::endl << "Run: " << iEvent.id().run() << "\tLumi: " << iEvent.id().luminosityBlock() << "\tEvent: " << iEvent.id().event() << std::endl;
   edm::Handle<edm::View<reco::Jet>> jets;
   iEvent.getByToken (jetCollectionTag_, jets);    
 
-  edm::Handle<reco::CandidateView> leptons;               
+  edm::Handle<edm::View<pat::Muon>> leptons;               
   iEvent.getByToken (leptonCollectionTag_, leptons);       
 
   edm::Handle<reco::JetCorrector> correctorL1L2L3Res;
@@ -153,9 +164,15 @@ AddLeptonJetRelatedVariables::produce(edm::Event& iEvent, const edm::EventSetup&
   reco::VertexRef PV(PVs.id());
   reco::VertexRefProd PVRefProd(PVs);
 
+  edm::Handle<edm::ValueMap<float>> miniIsoCharged; iEvent.getByToken(miniIsoChargedToken, miniIsoCharged);
+  edm::Handle<edm::ValueMap<float>> miniIsoAll; iEvent.getByToken(miniIsoAllToken, miniIsoAll);
+  edm::Handle<edm::ValueMap<float>> relIso; iEvent.getByToken(relIsoToken, relIso);
+
   //Output
-  std::vector<float> ptratio,ptrel,nchargeddaughers,btagcsv,deepbtagcsv;
-  for(auto icand = leptons->begin(); icand != leptons->end(); ++ icand){
+  std::vector<float> ptratio,ptrel,nchargeddaughers,btagcsv,deepbtagcsv,dxy,dz,sip3d,segcomp,miniisocharged,miniisoneutral,reliso;
+  int i = 0;
+  for(auto icand = leptons->begin(); icand != leptons->end(); ++ icand, ++i){
+    edm::RefToBase<pat::Muon> ref = leptons->refAt(i);
 
     // Find closest selected jet
     std::vector<pat::Jet> selectedJetsAll;
@@ -167,6 +184,15 @@ AddLeptonJetRelatedVariables::produce(edm::Event& iEvent, const edm::EventSetup&
     for(unsigned j = 1; j < selectedJetsAll.size(); ++j){
       if(reco::deltaR(selectedJetsAll[j], *icand) < reco::deltaR(selectedJetsAll[closestIndex], *icand)) closestIndex = j;
     }
+
+    auto muon = static_cast<pat::Muon>(*icand);
+    dxy.push_back(std::log(fabs(muon.innerTrack()->dxy(PVs->begin()->position()))));
+    dz.push_back(std::log(fabs(muon.innerTrack()->dz(PVs->begin()->position()))));
+    sip3d.push_back(fabs(muon.dB(pat::Muon::PV3D)/muon.edB(pat::Muon::PV3D)));
+    segcomp.push_back(muon.segmentCompatibility());
+    miniisocharged.push_back((*miniIsoCharged)[ref]);
+    miniisoneutral.push_back((*miniIsoAll)[ref]-(*miniIsoCharged)[ref]);
+    reliso.push_back((*relIso)[ref]);
 
     const pat::Jet& jet = selectedJetsAll[closestIndex];
     if(selectedJetsAll.size() == 0 || reco::deltaR(jet, *icand) > 0.4){
@@ -237,7 +263,7 @@ AddLeptonJetRelatedVariables::produce(edm::Event& iEvent, const edm::EventSetup&
       ptratio.push_back(l.Pt()/lepAwareJet.Pt());
       ptrel.push_back(lV.Perp((jV - lV).Vect()));
 
-      if(true and icand->pt() > 10){ // For debugging
+      if(false and icand->pt() > 10){ // For debugging
         std::cout << "  **** Muon (pt/eta,phi): " << icand->pt() << ", " << icand->eta() << "\t" << icand->phi() << std::endl;
         std::cout << "        jet (pt/eta,phi): " << lepAwareJet.pt() << ", " << jet.eta() << "\t" << jet.phi() << std::endl;
         std::cout << "                 deepcsv: " << bjet2+bjet3 << "(" << bjet2 << "+" << bjet3 << ")" << std::endl;
@@ -245,6 +271,13 @@ AddLeptonJetRelatedVariables::produce(edm::Event& iEvent, const edm::EventSetup&
         std::cout << "            nchdaugthers: " << nchdaugthers << std::endl;
         std::cout << "                   ptrel: " << ptrel.back() << std::endl;
         std::cout << "                 ptratio: " << ptratio.back() << std::endl;
+        std::cout << "          miniIsoCharged: " << miniisocharged.back() << std::endl; 
+        std::cout << "          miniIsoNeutral: " << miniisoneutral.back() << std::endl;
+        std::cout << "                  relIso: " << reliso.back() << std::endl;
+        std::cout << "                  logdxy: " << dxy.back() << std::endl; 
+        std::cout << "                   logdz: " << dz.back() << std::endl; 
+        std::cout << "                   sip3d: " << sip3d.back() << std::endl; 
+        std::cout << "                 segComp: " << segcomp.back() << std::endl;
       }
     }
 
@@ -255,11 +288,18 @@ AddLeptonJetRelatedVariables::produce(edm::Event& iEvent, const edm::EventSetup&
   
   
   /// Filling variables previously computed
-  storeMap(iEvent, leptons, ptratio, "JetPtRatio");
-  storeMap(iEvent, leptons, ptrel, "JetPtRel");
+  storeMap(iEvent, leptons, ptratio,          "JetPtRatio");
+  storeMap(iEvent, leptons, ptrel,            "JetPtRel");
   storeMap(iEvent, leptons, nchargeddaughers, "JetNDauCharged");
-  storeMap(iEvent, leptons, btagcsv, "JetBTagCSV");
-  storeMap(iEvent, leptons, deepbtagcsv, "JetDeepBTagCSV");
+  storeMap(iEvent, leptons, btagcsv,          "JetBTagCSV");
+  storeMap(iEvent, leptons, deepbtagcsv,      "JetDeepBTagCSV");
+  storeMap(iEvent, leptons, miniisocharged,   "MiniIsoCharged");
+  storeMap(iEvent, leptons, miniisoneutral,   "MiniIsoNeutral");
+  storeMap(iEvent, leptons, reliso,           "RelIso");
+  storeMap(iEvent, leptons, dxy,              "LogDxy");
+  storeMap(iEvent, leptons, dz,               "LogDz");
+  storeMap(iEvent, leptons, sip3d,            "Sip3d");
+  storeMap(iEvent, leptons, segcomp,          "SegComp");
 
 }
 
