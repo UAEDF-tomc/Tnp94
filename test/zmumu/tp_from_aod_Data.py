@@ -19,7 +19,7 @@ process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
 process.load("Configuration.StandardSequences.Reconstruction_cff")
 
-is2016=False
+is2016=True
 
 import os
 if "CMSSW_7_4_" in os.environ['CMSSW_VERSION']:
@@ -87,18 +87,8 @@ elif "CMSSW_9_4_" in os.environ['CMSSW_VERSION']:
     process.GlobalTag.globaltag = cms.string('80X_dataRun2_2016SeptRepro_v7' if is2016 else '94X_dataRun2_v6')
 
     process.source.fileNames = [
-            '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/0001B172-B9D8-E711-9771-34E6D7E05F1B.root',
-            '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/000D8EBA-DDD8-E711-9CC1-90E2BACBAA90.root',
-            '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/00187E27-4AD7-E711-B889-0CC47AD98D08.root',
-            '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/0063F440-69D8-E711-B1AB-0CC47A1E0DBC.root',
-            '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/0069F8CB-60D8-E711-BC59-002590E7D7D0.root',
-            '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/00B5B771-28D8-E711-8BFF-FA163ED9E97A.root',
-            '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/00E5B76F-DBD8-E711-B65D-02163E013935.root',
-            '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/00FFF78E-03D8-E711-8B50-FA163EB4E1E2.root',
-            '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/02306463-3FD8-E711-A33F-0025904C7DF8.root',
-            '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/02A63A34-09D8-E711-B377-1866DA879ED8.root'
-            
-            
+#            '/store/data/Run2016D/SingleMuon/AOD/07Aug17-v1/110000/002117C8-B78B-E711-B003-0025905D1CB2.root' if is2016 else '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/0001B172-B9D8-E711-9771-34E6D7E05F1B.root',
+             'file:pickevents2016.root' if is2016 else '/store/data/Run2017B/SingleMuon/AOD/17Nov2017-v1/40000/0001B172-B9D8-E711-9771-34E6D7E05F1B.root',
     ] 
 else: raise RuntimeError, "Unknown CMSSW version %s" % os.environ['CMSSW_VERSION']
 
@@ -179,6 +169,29 @@ appendL1MatchingAlgo(process)
 #addHLTL1Passthrough(process)
 from MuonAnalysis.TagAndProbe.common_variables_cff import *
 process.load("MuonAnalysis.TagAndProbe.common_modules_cff")
+
+
+if is2016:
+  #
+  # For deepCSV 
+  #
+  process.load('RecoBTag.Combined.deepFlavour_cff')
+  process.jetSequence = cms.Sequence(process.pfImpactParameterTagInfos * process.pfInclusiveSecondaryVertexFinderTagInfos * process.pfDeepFlavour)
+else:
+  process.jetSequence = cms.Sequence()
+
+
+
+jetIdCuts = [
+  '(abs(eta)<=2.4)                 && neutralHadronEnergyFraction<0.9  && neutralEmEnergyFraction<0.9  && (chargedMultiplicity+neutralMultiplicity)>1 && chargedHadronEnergyFraction>0.0 && chargedMultiplicity>0' + (' && chargedEmEnergyFraction<0.99' if is2016 else ''),
+  '(abs(eta)>2.4 && abs(eta)<=2.7) && neutralHadronEnergyFraction<0.9  && neutralEmEnergyFraction<0.9  && chargedMultiplicity+neutralMultiplicity>1',
+  '(abs(eta)>2.7 && abs(eta)<=3.0) && neutralHadronEnergyFraction<0.98 ' + ('&& neutralEmEnergyFraction<0.99 ' if not is2016 else '') + '&& neutralMultiplicity>2 && neutralEmEnergyFraction>' + ('0.01' if is2016 else '0.02'),
+  '(abs(eta)>2.7 && abs(eta)<=5.0) && neutralEmEnergyFraction<0.9 && neutralMultiplicity>10' + (' && neutralHadronEnergyFraction>0.2' if not is2016 else '')
+]
+process.njets30Module.objectSelection = cms.string("pt>30 && abs(eta) < 2.4 && ((" + ')||('.join(jetIdCuts) + '))')
+
+process.njets30ModuleAll = process.njets30Module.clone()
+process.njets30ModuleAll.objectSelection = cms.string("pt>30 && ((" + ')||('.join(jetIdCuts) + '))')
 
 process.tagMuons = cms.EDFilter("PATMuonSelector",
     src = cms.InputTag("patMuonsWithTrigger"),
@@ -277,7 +290,8 @@ process.tpTree = cms.EDAnalyzer("TagProbeFitTreeProducer",
     ),
     tagFlags = cms.PSet(HighPtTriggerFlags,HighPtTriggerFlagsDebug),
     pairVariables = cms.PSet(
-        nJets30 = cms.InputTag("njets30Module"),
+        nJets30    = cms.InputTag("njets30Module"),
+        nJets30All = cms.InputTag("njets30ModuleAll"),
         dz      = cms.string("daughter(0).vz - daughter(1).vz"),
         pt      = cms.string("pt"), 
         rapidity = cms.string("rapidity"),
@@ -325,6 +339,7 @@ process.extraProbeVariablesSeq = cms.Sequence(
     process.probeMetMt + process.tagMetMt +
     process.miniIsoSeq +
     # process.ak4PFCHSJetsL1L2L3 +
+    process.jetSequence *    # Why does this sequence not run ??????????????
     process.ak4PFCHSL1FastL2L3CorrectorChain * process.AddLeptonJetRelatedVariables +
     process.fullPuppIsolationSequence 
 )
@@ -337,6 +352,7 @@ process.tnpSimpleSequence = cms.Sequence(
     process.onePair    +
     process.nverticesModule +
     process.njets30Module +
+    process.njets30ModuleAll +
     process.extraProbeVariablesSeq +
     process.probeMultiplicities + 
     process.addEventInfo +
