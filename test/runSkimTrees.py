@@ -7,20 +7,25 @@ import os,glob,time
 
 versionDir = '/pnfs/iihe/cms/store/user/tomc/tnp/muons/Moriond18_v2/'
 
-samples2016 = {
-  #         'DY_LO'   : 'mc/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/crab_DYToLL_madgraph/*/*/*.root',
-  #         'runB'    : 'data/SingleMuon/crab_Run2016B/*/*/*.root',
-  #         'runC'    : 'data/SingleMuon/crab_Run2016C/*/*/*.root',
-  #         'runD'    : 'data/SingleMuon/crab_Run2016D/*/*/*.root',
-  #         'runE'    : 'data/SingleMuon/crab_Run2016E/*/*/*.root',
-  #         'runF'    : 'data/SingleMuon/crab_Run2016F/*/*/*.root',
-  #         'runG'    : 'data/SingleMuon/crab_Run2016G/*/*/*.root',
-  #         'runH-v2' : 'data/SingleMuon/crab_Run2016H-v2/*/*/*.root',
-  #         'runH-v3' : 'data/SingleMuon/crab_Run2016H-v3/*/*/*.root'
-
+samples2016 = {'DY'      : 'mc/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/crab_DYToLL_amcatnlo16*/*/*/*.root',
+               'DY_LO'   : 'mc/DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/crab_DYToLL_madgraph16*/*/*/*.root'
+               'runB'    : 'data/SingleMuon/crab_Run2016B/*/*/*.root',
+               'runC'    : 'data/SingleMuon/crab_Run2016C/*/*/*.root',
+               'runD'    : 'data/SingleMuon/crab_Run2016D/*/*/*.root',
+               'runE'    : 'data/SingleMuon/crab_Run2016E/*/*/*.root',
+               'runF'    : 'data/SingleMuon/crab_Run2016F/*/*/*.root',
+               'runG'    : 'data/SingleMuon/crab_Run2016G/*/*/*.root',
+               'runH-v2' : 'data/SingleMuon/crab_Run2016H-v2/*/*/*.root',
+               'runH-v3' : 'data/SingleMuon/crab_Run2016H-v3/*/*/*.root',
 }
 
-samples2017 = {'DY'      : 'mc/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/crab_DYToLL_amcatnlo/*/*/*.root',
+samples2017 = {'DY'      : 'mc/DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8/crab_DYToLL_amcatnlo*/*/*/*.root',
+               'DY_LO'   : 'mc/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/crab_DYToLL_madgraph*/*/*/*.root',
+               'runB'    : 'data/SingleMuon/crab_17Nov2017_RunB/*/*/*.root',
+               'runC'    : 'data/SingleMuon/crab_17Nov2017_RunC/*/*/*.root',
+               'runD'    : 'data/SingleMuon/crab_17Nov2017_RunD/*/*/*.root',
+               'runE'    : 'data/SingleMuon/crab_17Nov2017_RunE/*/*/*.root',
+               'runF'    : 'data/SingleMuon/crab_17Nov2017_RunF/*/*/*.root',
   }
 
 
